@@ -2,44 +2,33 @@ package org.pet.authapi.service;
 
 import org.pet.authapi.model.User;
 import org.pet.authapi.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+    private final UserRepository users;
+    private final PasswordEncoder encoder;
 
-    private UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    public boolean login(String login, String password) {
-        Optional<User> userOpt = userRepository.findByLogin(login);
-
-        if (userOpt.isPresent()) {
-            // Пользователь найден – проверка пароля
-            return passwordEncoder.matches(password, userOpt.get().getPassword());
-        } else {
-            // Пользователь не найден – регистрируем
-            User newUser = new User();
-            newUser.setLogin(login);
-            newUser.setPassword(passwordEncoder.encode(password));
-            userRepository.save(newUser);
-            return true; // Зарегистрирован и вошел
-        }
+    public AuthService(UserRepository users, PasswordEncoder encoder) {
+        this.users = users;
+        this.encoder = encoder;
     }
-    public boolean register(String login, String password) {
-        Optional<User> userOpt = userRepository.findByLogin(login);
-        if (userOpt.isPresent()) {
-            return false;
+
+    @Transactional
+    public void register(String username, String rawPassword) {
+        if (users.existsByLogin(username)) {
+            throw new IllegalArgumentException("Пользователь уже существует");
         }
-        User user = new User();
-        user.setLogin(login);
-        user.setPassword(passwordEncoder.encode(password));
-        userRepository.save(user);
-        return true;
+        String hash = encoder.encode(rawPassword);
+        users.save(new User(username, hash));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean authenticate(String username, String rawPassword) {
+        return users.findByLogin(username)
+                .map(u -> encoder.matches(rawPassword, u.getPassword()))
+                .orElse(false);
     }
 }

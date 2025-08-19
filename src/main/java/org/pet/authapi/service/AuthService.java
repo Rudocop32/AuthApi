@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final UserRepository users;
 
-    @Autowired
+
     private final PasswordEncoder encoder;
 
     public AuthService(UserRepository users, PasswordEncoder encoder) {
@@ -20,12 +20,13 @@ public class AuthService {
     }
 
     @Transactional
-    public void register(String username, String rawPassword) {
+    public boolean register(String username, String rawPassword) {
         if (users.existsByLogin(username)) {
-            throw new IllegalArgumentException("Пользователь уже существует");
+           return false;
         }
         String hash = encoder.encode(rawPassword);
         users.save(new User(username, hash));
+        return true;
     }
 
     @Transactional(readOnly = true)

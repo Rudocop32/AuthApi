@@ -2,6 +2,7 @@ package org.pet.authapi.service;
 
 import org.pet.authapi.model.User;
 import org.pet.authapi.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
     private final UserRepository users;
+
+    @Autowired
     private final PasswordEncoder encoder;
 
     public AuthService(UserRepository users, PasswordEncoder encoder) {
